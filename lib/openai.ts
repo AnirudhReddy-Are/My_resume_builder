@@ -1,31 +1,26 @@
-export async function generateResumeContent(data: Partial<any>, section: string) {
-  const response = await fetch('/api/generate-resume', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ data, section }),
-  });
+import OpenAI from "openai";
 
-  if (!response.ok) {
-    throw new Error('Failed to generate resume content');
-  }
-
-  return response.json();
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("❌ Missing OPENAI_API_KEY in environment variables");
 }
 
-export async function enhanceResumeSection(content: string, section: string) {
-  const response = await fetch('/api/enhance-resume', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ content, section }),
-  });
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-  if (!response.ok) {
-    throw new Error('Failed to enhance resume content');
+export async function generateResume(prompt: string): Promise<string> {
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini", // or "gpt-4o" if you want more advanced output
+      messages: [
+        { role: "system", content: "You are a professional resume builder." },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    return response.choices[0].message?.content || "⚠️ No content generated.";
+  } catch (error: any) {
+    console.error("❌ Error generating resume:", error);
+    return "Error: Failed to generate resume.";
   }
-
-  return response.json();
 }
